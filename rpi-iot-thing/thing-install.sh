@@ -1,4 +1,3 @@
-```
 ################################################################################
 #!/bin/sh
 #
@@ -16,16 +15,3 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ################################################################################
-
-
-# rpi-iot
-sudo apt-get -y install git
-git clone https://github.com/msonst/rpi-iot.git
-
-## Server
-cd rpi-iot/rpi-iot-server
-
-## Thing
-cd rpi-iot/rpi-iot-thing
-
-```
