@@ -28,12 +28,14 @@ sudo apt-get update
 curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
 sudo groupadd docker
 sudo gpasswd -a $USER docker
+sudo systemctl enable docker
+sudo systemctl start docker
 
 
 # Docker Compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-sudo ln -sf /usr/local/bin/docker-compose /usr/bin/docker-compose
+apt update
+apt install -y python python-pip
+pip install docker-compose
 
 # Start Docker Compose
 docker-compose up
