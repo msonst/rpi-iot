@@ -21,25 +21,36 @@ services:
   RabbitMQ1:
     environment:
       - RABBITMQ_ERLANG_COOKIE='secret_cookie'
-    networks:
-      - back
+
     hostname: rpi-iot-rabbitmq1
+    
     image: "rabbitmq:3-management"
+    
     ports:
       - "15672:15672"
       - "5672:5672"
+      
     tty: true
+    
     volumes:
       - rabbit1:/var/lib/rabbitmq
       - ./config/rabbitmq/:/etc/rabbitmq/
+      
     command:  bash -c "sleep 10; rabbitmq-server;"
 
   Node-RED1:
-    image: nodered/node-red-docker:slim
+    image: nodered/node-red-docker:rpi
+
+    hostname: rpi-iot-nodered1
+    
+    depends_on:
+      - RabbitMQ1
+      
     ports:
       - "1880:1880"
+      
     volumes:
-      - /opt/docker/nodered:/data
+      - /data/nodered:/data      
       
 volumes:
   rabbit1:

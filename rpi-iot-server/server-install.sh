@@ -31,6 +31,10 @@ sudo gpasswd -a $USER docker
 sudo systemctl enable docker
 sudo systemctl start docker
 
+# Folders
+sudo mkdir -p /data/nodered
+sudo chown :docker /data/nodered
+sudo chmod 777 /data/nodered/
 
 # Docker Compose
 apt-get -y update
