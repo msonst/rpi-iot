@@ -26,8 +26,10 @@ sudo chmod +x rpi-iot/rpi-iot-thing/thing-install.sh
 
 # Server
 cd rpi-iot/rpi-iot-server
+./server-install.sh
 
 # Thing
 cd rpi-iot/rpi-iot-thing
+./thing-install.sh
 
 ```
