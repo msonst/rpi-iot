@@ -18,7 +18,7 @@
     
 version: "2"
 services:
-  rabbit_node_1:
+  RabbitMQ1:
     environment:
       - RABBITMQ_ERLANG_COOKIE='secret_cookie'
     networks:
@@ -34,6 +34,13 @@ services:
       - ./config/rabbitmq/:/etc/rabbitmq/
     command:  bash -c "sleep 10; rabbitmq-server;"
 
+  Node-RED1:
+    image: nodered/node-red-docker:slim
+    ports:
+      - "1880:1880"
+    volumes:
+      - /opt/docker/nodered:/data
+      
 volumes:
   rabbit1:
     driver: local
