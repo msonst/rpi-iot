@@ -16,15 +16,15 @@
 #  limitations under the License.
 ################################################################################
 
-sudo apt-get update
-sudo apt-get upgrade
-sudo apt-get install xrdp 
+sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y install xrdp 
 sudo systemctl enable xrdp
 sudo systemctl start xrdp
 sudo ufw allow from 192.168.0.0/24 to any port 3389
 
 # Docker
-sudo apt-get update
+sudo apt-get -y update
 curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
 sudo groupadd docker
 sudo gpasswd -a $USER docker
@@ -33,8 +33,8 @@ sudo systemctl start docker
 
 
 # Docker Compose
-apt update
-apt install -y python python-pip
+apt-get -y update
+apt-get -y install python python-pip
 pip install docker-compose
 
 # Start Docker Compose

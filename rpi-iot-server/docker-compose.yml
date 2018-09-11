@@ -23,7 +23,7 @@ services:
       - RABBITMQ_ERLANG_COOKIE='secret_cookie'
     networks:
       - back
-    hostname: rabbit_node_1
+    hostname: rpi-iot-rabbitmq1
     image: "rabbitmq:3-management"
     ports:
       - "15672:15672"
