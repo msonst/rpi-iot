@@ -2,7 +2,7 @@
 ################################################################################
 #!/bin/sh
 #
-#  Copyright (c) 2017, Michael Sonst, All Rights Reserved.
+#  Copyright (c) 2018, Michael Sonst, All Rights Reserved.
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@
 sudo apt-get -y install git
 git clone https://github.com/msonst/rpi-iot.git
 
-## Server
+# Server
 cd rpi-iot/rpi-iot-server
 
-## Thing
+# Thing
 cd rpi-iot/rpi-iot-thing
 
 ```

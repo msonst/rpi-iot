@@ -1,7 +1,7 @@
 ################################################################################
 #!/bin/sh
 #
-#  Copyright (c) 2017, Michael Sonst, All Rights Reserved.
+#  Copyright (c) 2018, Michael Sonst, All Rights Reserved.
 # 
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -23,22 +23,22 @@ sudo systemctl enable xrdp
 sudo systemctl start xrdp
 sudo ufw allow from 192.168.0.0/24 to any port 3389
 
-## Docker
+# Docker
 sudo apt-get update
 curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
 sudo groupadd docker
 sudo gpasswd -a $USER docker
 newgrp docker
 
-## Docker Compose
+# Docker Compose
 sudo curl -L "https://github.com/docker/compose/releases/download/1.22.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 
-## SStart Docker Compose
+# Start Docker Compose
 docker-compose up
 
-## RabbitMQ
+# RabbitMQ
 #docker run rabbitmq
 
 #https://www.rabbitmq.com/mqtt.html
