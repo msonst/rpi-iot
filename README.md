@@ -25,17 +25,11 @@ sudo chmod +x rpi-iot/rpi-iot-server/src/main/bash/server-install.sh
 sudo chmod +x rpi-iot/rpi-iot-thing/src/main/bash/thing-install.sh
 
 # Server
-cd rpi-iot/rpi-iot-server/src/main/bash
+cd rpi-iot/rpi-iot-server/src/main/bash/
 ./server-install.sh
 
 # Thing
-cd rpi-iot/rpi-iot-thing/src/main/bash
+cd rpi-iot/rpi-iot-thing/src/main/bash/
 ./thing-install.sh
 
-# URLs
-NodeRed: http://IP:1880
-NodeRed Dashboard: http://IP:1880/ui/
-RabbitMq Admin: http://IP:15672
-RabbitMq AMQP: http://IP:5672
-RabbitMq MQTT: http://IP:1883
 ```
