@@ -1,0 +1,26 @@
+allprojects {
+    apply plugin: 'java'
+    group = 'io.github.cdelmas'
+    version = '1.0'
+    sourceCompatibility = 1.8
+}
+
+subprojects {
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencies {
+        compile project(':rpi-iot-common')
+        
+        compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
+        compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
+        compile group: 'commons-io', name: 'commons-io', version: '2.5'
+        compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
+        compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1'
+        
+        testCompile 'org.mockito:mockito-all:1.9.5'
+        testCompile 'junit:junit:4.12' 
+    }
+}

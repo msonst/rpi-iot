@@ -1,0 +1,20 @@
+plugins {
+}
+
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+dependencies {
+
+	compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.4.1'
+}
+
+jar {
+    manifest {
+    }
+}

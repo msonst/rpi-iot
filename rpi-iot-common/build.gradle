@@ -1,0 +1,19 @@
+plugins {
+}
+
+sourceSets {
+    generated {
+        java {
+            srcDirs = ['src/main/generated']
+        }
+    }
+}
+
+dependencies {
+
+}
+
+jar {
+    manifest {
+    }
+}
