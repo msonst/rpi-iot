@@ -13,20 +13,25 @@ public class AppMainMQTT
     public static void main(String[] args) throws MqttException, InterruptedException
     {
 
-        String messageString = "Testmessage";
         System.out.println("== START PUBLISHER ==");
         MqttClient client = new MqttClient("tcp://192.168.0.8:1883", MqttClient.generateClientId());
         client.connect();
         MqttMessage message = new MqttMessage();
-        // message.setQos(0);
+
+        int counter = 0;
+
         while (true)
         {
-            messageString = System.currentTimeMillis() +  ": Testmessage";
-            message.setPayload(messageString.getBytes());
+            message.setPayload(Integer.toString(counter % 11).getBytes());
+            client.publish("mqtt/int", message);
 
-            client.publish("mqtt/pub", message);
-            System.out.println(messageString);
-            Thread.sleep(1000);
+            message.setPayload(("Message " + Integer.toString(counter % 11)).getBytes());
+            client.publish("mqtt/str", message);
+
+            System.out.println(message.toString());
+            counter++;
+
+            Thread.sleep(2000);
         }
         // client.disconnect();
         // System.out.println("== END PUBLISHER ==");

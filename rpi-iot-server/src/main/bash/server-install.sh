@@ -37,9 +37,13 @@ sudo chown :docker /data/nodered
 sudo chmod 777 /data/nodered/
 
 # Docker Compose
-apt-get -y update
-apt-get -y install python python-pip
+sudo apt-get -y update
+sudo apt-get -y install python python-pip
 pip install docker-compose
+
+sudo apt-get -y install npm
+cd /data/nodered/
+npm i node-red-dashboard
 
 # Start Docker Compose
 cd ../docker
