@@ -3,3 +3,6 @@
 .gradle
 build
 paho*
+.settings
+.classpath
+.project
