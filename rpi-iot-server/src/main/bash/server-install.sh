@@ -40,14 +40,14 @@ sudo chmod 777 /data/nodered/
 sudo apt-get -y update
 sudo apt-get -y install python python-pip
 pip install docker-compose
+sudo cp docker-compose-app.service /etc/systemd/system/
 
-sudo apt-get -y install npm
 cd /data/nodered/
 npm i node-red-dashboard
-
-# Start Docker Compose
-cd ../docker
-docker-compose up
+# nodejs>8 required: npm i node-red-node-email
+#npm i node-red-node-watson
+#npm i node-red-contrib-watson-machine-learning
+#npm i node-red-contrib-thinger
 
 # RabbitMQ
 #docker run rabbitmq
@@ -59,3 +59,7 @@ docker-compose up
 #rabbitmqctl add_user mqtt-test mqtt-test
 #rabbitmqctl set_permissions -p / mqtt-test ".*" ".*" ".*"
 #rabbitmqctl set_user_tags mqtt-test management
+
+
+# Start Docker Compose
+systemctl enable docker-compose-app

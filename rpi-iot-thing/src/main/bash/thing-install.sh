@@ -15,3 +15,40 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ################################################################################
+
+# Set new password
+passwd
+sudo adduser <USER>
+sudo usermod -aG sudo <USER> 
+
+sudo apt-get -y update
+sudo apt-get -y upgrade
+
+# Docker
+sudo apt-get -y update
+curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
+sudo groupadd docker
+sudo gpasswd -a $USER docker
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Folders
+sudo mkdir -p /data/nodered
+sudo chown :docker /data/nodered
+sudo chmod 777 /data/nodered/
+
+# Docker Compose
+sudo apt-get -y update
+sudo apt-get -y install python python-pip
+pip install docker-compose      
+sudo cp docker-compose-app.service /etc/systemd/system/
+
+cd /data/nodered/
+npm i node-red-contrib-fft
+# broken: npm install node-red-contrib-opcua
+#npm install node-red-contrib-modbus
+#npm install node-red-contrib-cip-ethernet-ip  
+
+# Start Docker Compose
+systemctl enable docker-compose-app
+
