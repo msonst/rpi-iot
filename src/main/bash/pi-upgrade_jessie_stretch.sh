@@ -15,51 +15,15 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ################################################################################
-    
-version: "2"
-services:
-  RabbitMQ1:
-    environment:
-      - RABBITMQ_ERLANG_COOKIE='secret_cookie'
 
-    hostname: rpi-iot-rabbitmq1
-    
-    restart: always  
-    
-    image: "rabbitmq:3-management"
-    
-    ports:
-      - "15672:15672"
-      - "5672:5672"
-      - "1883:1883"
-      
-    tty: true
-    
-    volumes:
-      - rabbit1:/var/lib/rabbitmq
-      - ./config/rabbitmq/:/etc/rabbitmq/
-      
-    command:  bash -c "sleep 10; rabbitmq-server;"
-
-  Node-RED1:
-    image: nodered/node-red-docker:rpi-v8
-
-    hostname: rpi-iot-nodered1
-    
-    restart: always  
-    
-    depends_on:
-      - RabbitMQ1
-      
-    ports:
-      - "1880:1880"
-      
-    volumes:
-      - /data/nodered:/data      
-      
-volumes:
-  rabbit1:
-    driver: local
-
-networks:
-  back:
+sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y dist-upgrade
+sudo rpi-update
+sudo sed -i 's/jessie/stretch/g' /etc/apt/sources.list    
+sudo sed -i 's/jessie/stretch/g' /etc/apt/sources.list.d/raspi.list    
+sudo apt-get -y remove apt-listchanges
+sudo apt-get -y update && sudo apt-get upgrade 
+sudo apt-get -y dist-upgrade 
+sudo apt-get -y autoremove -y && sudo apt-get -y autoclean
+sudo rpi-update

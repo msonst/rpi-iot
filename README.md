@@ -19,25 +19,37 @@
 
 
 # rpi-iot
+
+# Set new password
+sudo adduser docker
+sudo usermod -aG sudo docker 
+sudo su docker
+
 sudo apt-get -y install git
 git clone https://github.com/msonst/rpi-iot.git
-sudo chmod +x rpi-iot/rpi-iot-server/src/main/bash/server-install.sh
-sudo chmod +x rpi-iot/rpi-iot-thing/src/main/bash/thing-install.sh
 
 sudo systemctl enable ssh
 sudo systemctl start ssh
 
 
 # Server
+# assumes you're user docker
 cd rpi-iot/rpi-iot-server/src/main/bash/
+sudo chmod +x server-install.sh
 ./server-install.sh
 
 # Thing
-# After creating the boot-SD card, copy the SSH file into the root directory
-# Mount the created drives in a Linux VM and copy interfaces and wpa_supplicant.conf to
-# their correct location
-# Replace <WIFI-NAME> and <WIFI-KEY> in wpa_supplicant.conf
-# Please note that the configuration in wpa_supplicant.conf is specifically for WPA2-PSK [AES] e.g. on a WNDR3400v3
+sudo raspi-config
+> Interfacing Options > Enable SSH
+> Hostname > private-cloud
+> Advanced > Expand Filesystem
+> Localisation Options > Change Wi-fi Country > US
+> Localisation Options > Change Timezone > US > Eastern
+> reboot
+sudo chmod +x src/main/bash/pi-upgrade_jessie_stretch.sh
+cd src/main/bash
+./pi-upgrade_jessie_stretch.sh
+sudo chmod +x rpi-iot/rpi-iot-thing/src/main/bash/thing-install.sh
 cd rpi-iot/rpi-iot-thing/src/main/bash/
 ./thing-install.sh
 

@@ -23,11 +23,15 @@ sudo systemctl enable xrdp
 sudo systemctl start xrdp
 sudo ufw allow from 192.168.0.0/24 to any port 3389
 
+sudo timedatectl set-ntp on
+sudo systemctl daemon-reload
+
 # Docker
 sudo apt-get -y update
 curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
 sudo groupadd docker
-sudo gpasswd -a $USER docker
+#sudo useradd -docker -g docker
+sudo gpasswd -a $USER docker 
 sudo systemctl enable docker
 sudo systemctl start docker
 
@@ -38,12 +42,19 @@ sudo chmod 777 /data/nodered/
 
 # Docker Compose
 sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y autoremove -y && sudo apt-get -y autoclean
 sudo apt-get -y install python python-pip
-pip install docker-compose
-sudo cp docker-compose-app.service /etc/systemd/system/
+sudo pip install docker-compose
+sudo cp iot-server.service /etc/systemd/system/
+sudo mkdir -p /iot-server/
+sudo cp -r ../docker /iot-server/
+sudo chown -R :docker /iot-server/docker
 
 cd /data/nodered/
+sudo apt-get -y install npm
 npm i node-red-dashboard
+# nodejs>8 required: npm i node-red-vis
 # nodejs>8 required: npm i node-red-node-email
 #npm i node-red-node-watson
 #npm i node-red-contrib-watson-machine-learning
@@ -62,4 +73,5 @@ npm i node-red-dashboard
 
 
 # Start Docker Compose
-systemctl enable docker-compose-app
+sudo systemctl enable iot-server
+sudo systemctl start iot-server
