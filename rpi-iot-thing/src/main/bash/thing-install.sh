@@ -44,6 +44,7 @@ sudo cp -r ../docker /iot-thing/
 sudo chown -R :docker /iot-thing/docker
 
 cd /data/nodered/
+sudo apt-get -y install npm
 npm i node-red-contrib-fft
 # broken: npm install node-red-contrib-opcua
 #npm install node-red-contrib-modbus
