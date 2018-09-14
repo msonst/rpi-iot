@@ -16,13 +16,8 @@
 #  limitations under the License.
 ################################################################################
 
-# Set new password
-passwd
-sudo adduser <USER>
-sudo usermod -aG sudo <USER> 
-
-sudo apt-get -y update
-sudo apt-get -y upgrade
+sudo timedatectl set-ntp on
+sudo systemctl daemon-reload
 
 # Docker
 sudo apt-get -y update
@@ -39,9 +34,14 @@ sudo chmod 777 /data/nodered/
 
 # Docker Compose
 sudo apt-get -y update
+sudo apt-get -y upgrade
+sudo apt-get -y autoremove -y && sudo apt-get -y autoclean
 sudo apt-get -y install python python-pip
-pip install docker-compose      
-sudo cp docker-compose-app.service /etc/systemd/system/
+sudo pip install docker-compose
+sudo cp iot-thing.service /etc/systemd/system/
+sudo mkdir -p /iot-thing/
+sudo cp -r ../docker /iot-thing/
+sudo chown -R :docker /iot-thing/docker
 
 cd /data/nodered/
 npm i node-red-contrib-fft
@@ -50,5 +50,6 @@ npm i node-red-contrib-fft
 #npm install node-red-contrib-cip-ethernet-ip  
 
 # Start Docker Compose
-systemctl enable docker-compose-app
+sudo systemctl enable iot-thing
+sudo systemctl start iot-thing
 

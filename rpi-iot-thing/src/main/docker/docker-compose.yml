@@ -20,7 +20,7 @@ version: "2"
 services:
   
   Node-RED1:
-    image: nodered/node-red-docker:rpi
+    image: nodered/node-red-docker:rpi-v8
 
     hostname: rpi-iot-nodered1
     
