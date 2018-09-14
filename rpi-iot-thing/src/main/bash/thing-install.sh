@@ -45,6 +45,7 @@ sudo chown -R :docker /iot-thing/docker
 
 cd /data/nodered/
 sudo apt-get -y install npm
+npm i --unsafe-perm node-red-contrib-i2c
 npm i node-red-contrib-fft
 # broken: npm install node-red-contrib-opcua
 #npm install node-red-contrib-modbus
