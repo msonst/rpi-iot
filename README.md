@@ -54,6 +54,7 @@ cd src/main/bash
 sudo chmod +x rpi-iot/rpi-iot-thing/src/main/bash/thing-install.sh
 cd rpi-iot/rpi-iot-thing/src/main/bash/
 ./thing-install.sh
+```
 
 Node Red: IP/1880
 RabbitMq Management:15672
@@ -62,5 +63,3 @@ RaabbitMq AMPQ: tcp://IP:5672
 
 Map: IP/1880/worldmap
 Dashboard: IP/1880/ui
-
-```
