@@ -1,0 +1,1 @@
+pinout rpi3: https://myelectronicslab.com/raspberry-pi-3-gpio-model-b-block-pinout/

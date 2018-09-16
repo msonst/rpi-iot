@@ -41,6 +41,7 @@ sudo chmod +x server-install.sh
 # Thing
 sudo raspi-config
 > Interfacing Options > Enable SSH
+> Interfacing Options > Enable I2C
 > Hostname > private-cloud
 > Advanced > Expand Filesystem
 > Localisation Options > Change Wi-fi Country > US
@@ -61,4 +62,7 @@ RaabbitMq AMPQ: tcp://IP:5672
 Map: IP/1880/worldmap
 Dashboard: IP/1880/ui
 
+
+gradlew rpi-iot-server:build
+gradlew rpi-iot-thing:build
 ```

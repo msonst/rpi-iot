@@ -17,4 +17,13 @@
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
 ################################################################################
+
+deploy
+"java -jar iot-thing.jar -Xdebug -Xrunjdwp:transport=dt_socket,address=4242,server=y,suspend=y 
+
+
+GND->GND
+VIN->+5v
+SDA->SDA
+SCL->SCL
 ```

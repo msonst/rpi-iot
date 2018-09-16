@@ -1,4 +1,7 @@
 plugins {
+    id 'java'
+    id 'application'
+    //id 'org.gradle.java.experimental-jigsaw' version '0.1.1'
 }
 
 sourceSets {
@@ -10,7 +13,7 @@ sourceSets {
 }
 
 dependencies {
-
+  compile project(':rpi-iot-common')
 	compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.4.1'
 }
 
@@ -18,3 +21,7 @@ jar {
     manifest {
     }
 }
+
+//javaModule.name = '/rpi-iot-server.web'
+mainClassName = "de.sonsts.rpi.iot.AppMain"
+applicationName = 'iot-server'

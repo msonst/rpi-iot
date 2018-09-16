@@ -1,8 +1,7 @@
 allprojects {
     apply plugin: 'java'
-    group = 'io.github.cdelmas'
-    version = '1.0'
-    sourceCompatibility = 1.8
+    group = 'de.sonsts'
+    sourceCompatibility = 1.7
 }
 
 subprojects {
@@ -12,8 +11,6 @@ subprojects {
     }
 
     dependencies {
-        compile project(':rpi-iot-common')
-        
         compile group: 'commons-cli', name: 'commons-cli', version: '1.4'
         compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
         compile group: 'commons-io', name: 'commons-io', version: '2.5'

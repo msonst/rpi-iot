@@ -1,6 +1,17 @@
 package de.sonsts.rpi.iot;
 
-import com.rabbitmq.client.*;
+import java.io.IOException;
+import java.util.Arrays;
+
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+
+import com.pi4j.io.i2c.I2CBus;
+import com.pi4j.io.i2c.I2CDevice;
+import com.pi4j.io.i2c.I2CFactory;
+import com.pi4j.io.i2c.I2CFactory.UnsupportedBusNumberException;
+
+import de.sonsts.rpi.i2c.sensor.ADXL345;
 
 /**
  * @author sonst00m
@@ -8,44 +19,55 @@ import com.rabbitmq.client.*;
  */
 public class AppMain
 {
-    private static final String TASK_QUEUE_NAME = "task_queue";
-
-    public static void main(String[] argv) throws Exception
+    public static void main(String[] args) throws Exception
     {
-        ConnectionFactory factory = new ConnectionFactory();
-        factory.setHost("192.168.0.8");
-        factory.setPort(5672);
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
+        ADXL345 adxl345 = null;
+        I2CBus bus = null;
+        I2CDevice dev = null;
 
-        channel.queueDeclare(TASK_QUEUE_NAME, true, false, false, null);
+        MqttClient client = new MqttClient("tcp://192.168.0.8:1883", MqttClient.generateClientId());
+        client.connect();
+        MqttMessage message = new MqttMessage();
 
-        String message = getMessage(argv);
-        while (true)
+        bus = I2CFactory.getInstance(I2CBus.BUS_1);
+        if (null == bus)
         {
-            channel.basicPublish("", TASK_QUEUE_NAME, MessageProperties.PERSISTENT_TEXT_PLAIN, message.getBytes("UTF-8"));
-            System.out.println(" [x] Sent '" + message + "'");
-            Thread.sleep(1);
+            throw new Exception("Failed to get I2C");
         }
-//        channel.close();
-//        connection.close();
-    }
 
-    private static String getMessage(String[] strings)
-    {
-        if (strings.length < 1) return "Hello World!";
-        return joinStrings(strings, " ");
-    }
-
-    private static String joinStrings(String[] strings, String delimiter)
-    {
-        int length = strings.length;
-        if (length == 0) return "";
-        StringBuilder words = new StringBuilder(strings[0]);
-        for (int i = 1; i < length; i++)
+        try
         {
-            words.append(delimiter).append(strings[i]);
+            dev = bus.getDevice(0x53);// ADXL345.ADXL345_DEVID);
         }
-        return words.toString();
+        catch (IOException e)
+        {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        if (null == dev)
+        {
+            throw new Exception("Failed to get device");
+        }
+
+        adxl345 = new ADXL345(dev, ADXL345.DataRate.BR3200, ADXL345.Range.R2G);
+
+        if (null != adxl345)
+        {
+            adxl345.open();
+
+            while (true)
+            {
+                double[] values = adxl345.getCalValues();
+                String strMsg = String.format("{\"ts\":%d, \"x\":%.4f, \"y\":%.4f, \"z\":%.4f}", System.currentTimeMillis(), values[0],
+                        values[1], values[2]);
+                
+                System.out.println(strMsg);
+
+                message.setPayload(strMsg.getBytes());
+                client.publish("mqtt/gyro", message);
+
+//                Thread.sleep(100);
+            }
+        }
     }
 }

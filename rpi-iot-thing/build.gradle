@@ -1,5 +1,17 @@
-plugins {
+plugins {     
+    id 'java'
+    id 'application'
 }
+
+version = '1.0'
+mainClassName = "de.sonsts.rpi.iot.AppMain"
+applicationName = 'iot-thing'
+
+//applicationDefaultJvmArgs = ["-Dlogback.configurationFile=MY_APP_HOME/logback-hydra.xml",
+//                             "-Dconfig=MY_APP_HOME/config.properties", 
+//							"-Djava.net.preferIPv4Stack=true", "-Dapp.home=MY_APP_HOME/", "-Xms512m", "-Xmx1024m"]
+
+applicationDefaultJvmArgs = ["-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=4242", "-Xms512m", "-Xmx1024m"]
 
 sourceSets {
     generated {
@@ -10,13 +22,10 @@ sourceSets {
 }
 
 dependencies {
-
-	
+  	compile project(':rpi-iot-common')
 	compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.4.1'
 	compile group: 'org.eclipse.paho', name: 'org.eclipse.paho.client.mqttv3', version: '1.2.0'
+	compile group: 'com.pi4j', name: 'pi4j-core', version: '1.1'
 }
 
-jar {
-    manifest {
-    }
-}
+

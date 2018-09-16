@@ -18,6 +18,7 @@
 
 sudo timedatectl set-ntp on
 sudo systemctl daemon-reload
+sudo apt-get -y install i2c-tools
 
 # Docker
 sudo apt-get -y update
@@ -55,3 +56,4 @@ npm i node-red-contrib-fft
 sudo systemctl enable iot-thing
 sudo systemctl start iot-thing
 
+sudo apt-get -y install oracle-java8-jdk

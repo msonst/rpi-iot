@@ -1,0 +1,1 @@
+docker run -ti --rm -P /rpi-iot-server
