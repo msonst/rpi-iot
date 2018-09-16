@@ -1,3 +1,5 @@
+Please find enclusures on [thingiverse](https://www.thingiverse.com/thing:3092356)
+
 ```
 ################################################################################
 #!/bin/sh
@@ -54,15 +56,18 @@ sudo chmod +x rpi-iot/rpi-iot-thing/src/main/bash/thing-install.sh
 cd rpi-iot/rpi-iot-thing/src/main/bash/
 ./thing-install.sh
 
+
 Node Red: IP/1880
 RabbitMq Management:15672
 RabbitMq MQTT: tcp://IP:1883
 RaabbitMq AMPQ: tcp://IP:5672
-
 Map: IP/1880/worldmap
 Dashboard: IP/1880/ui
+<<<<<<< HEAD
 
 
 gradlew rpi-iot-server:build
 gradlew rpi-iot-thing:build
+=======
+>>>>>>> branch 'master' of https://github.com/msonst/rpi-iot.git
 ```
