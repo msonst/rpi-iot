@@ -1,7 +1,6 @@
 package de.sonsts.rpi.i2c.sensor;
 
 import java.io.IOException;
-import java.util.HashMap;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -9,8 +8,11 @@ import org.apache.logging.log4j.Logger;
 import com.pi4j.io.i2c.I2CDevice;
 
 import de.sonsts.rpi.i2c.sensor.utils.BitUtils;
+import de.sonsts.rpi.i2c.sensor.utils.Calibration;
+import de.sonsts.rpi.i2c.sensor.utils.SampleBean;
+import de.sonsts.rpi.i2c.sensor.utils.SampleBuffer;
 
-public class ADXL345
+public class ADXL345 implements Runnable
 {
     final static Logger logger = LogManager.getLogger();
 
@@ -28,6 +30,23 @@ public class ADXL345
         public int getValue()
         {
             return mDataRate;
+        }
+    }
+
+    public enum FifoMode
+    {
+        FFBYPASS(0x00), FFFIFO(0x01 << 6), FFSTREAM(0x02 << 6), FFTRIGGER(0x03 << 6);
+
+        private int mMode;
+
+        private FifoMode(int mode)
+        {
+            mMode = mode;
+        }
+
+        public int getValue()
+        {
+            return mMode;
         }
     }
 
@@ -177,49 +196,18 @@ public class ADXL345
     private final static int ADXL345_MSK_FIFO_CTL_TRIGGER = (1 << 0);
     private final static int ADXL345_MSK_FIFO_CTL_SAMPLES = ((1 << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (1 << 0));
 
-    private final static int ADXL345_MSKFIFO_STATUS_FIFO_TRIG = (1 << 7);
-    private final static int ADXL345_MSKFIFO_STATUS_ENTRIES = ((1 << 5) | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (1 << 0));
+    private final static int ADXL345_MSK_FIFO_STATUS_FIFO_TRIG = (1 << 7);
+    private final static int ADXL345_MSK_FIFO_STATUS_ENTRIES = ((1 << 5) | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (1 << 0));
 
     private final double ADXL345_MG2G_MULTIPLIER = (0.004); // 4mg per lsb
-
-    private double mGain = 1D;
-
-    private class Statistics
-    {
-        private double mMean;
-        private double mMax;
-        private double mMin;
-
-        public Statistics(double mean, double max, double min)
-        {
-            mMean = mean;
-            mMax = max;
-            mMin = min;
-        }
-
-        public double getMean()
-        {
-            return mMean;
-        }
-
-        public double getMax()
-        {
-            return mMax;
-        }
-
-        public double getMin()
-        {
-            return mMin;
-        }
-
-    }
 
     private I2CDevice mAdxl345;
 
     private Range mRange;
 
     private DataRate mBaudRate;
-    private Statistics[] mStatistics = new Statistics[3];
+    SampleBuffer mSamples = new SampleBuffer();
+    private boolean mInitialized = false;
 
     private static double getMax(double[] da)
     {
@@ -267,22 +255,20 @@ public class ADXL345
             throw new Exception("Device not initialized");
         }
 
-        mGain = ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD;
-
-        mStatistics[0] = new Statistics(0, 0, 0);
-        mStatistics[1] = new Statistics(0, 0, 0);
-        mStatistics[2] = new Statistics(0, 0, 0);
+        mSamples.setCalibration(new Calibration(0, 0, 0), new Calibration(0, 0, 0), new Calibration(0, 0, 0), ADXL345_MG2G_MULTIPLIER
+                * SENSORS_GRAVITY_STANDARD);
 
         writeRegister(ADXL345_REG_RW_BW_RATE, ADXL345_MSK_BW_RATE_RATE, mBaudRate.getValue());
+        writeRegister(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_FIFO_MODE, FifoMode.FFFIFO.getValue());
+        writeRegister(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_SAMPLES, 0x0F);
         writeRegister(ADXL345_REG_RW_DATA_FORMAT, ADXL345_MSK_DATA_FORMAT_RANGE, mRange.getValue());
         writeRegister(ADXL345_REG_RW_POWER_CTL, ADXL345_MSK_POWER_CTL_MEASURE);
     }
 
     private double readValue(Axis axis) throws Exception
     {
-        double retVal = 0;
         int lA = 0, hA = 0;
-        int lV = 0, hV = 0;
+        byte lV = 0, hV = 0;
 
         switch (axis)
         {
@@ -302,20 +288,10 @@ public class ADXL345
                 break;
         }
 
-        lV = i2cRead(lA);
-        hV = i2cRead(hA);
-        
-        retVal = (hV >= 0 && hV <= 0x7f) ? hV : hV - 0x100;
-        return ((retVal < 0) ? (retVal * 256 - lV) : (retVal * 256 + lV)) * mGain;
-    }
+        lV = (byte) i2cRead(lA);
+        hV = (byte) i2cRead(hA);
 
-
-    private double[] readValues() throws IOException, Exception
-    {
-        return new double[]
-        {
-                readValue(Axis.X), readValue(Axis.Y), readValue(Axis.Z),
-        };
+        return SampleBuffer.toDouble(hV, lV) * ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD;
     }
 
     private int i2cRead(int reg) throws Exception
@@ -323,6 +299,15 @@ public class ADXL345
         int result = 0;
 
         result = mAdxl345.read(reg);
+
+        return result;
+    }
+
+    private int i2cRead(int reg, byte[] buffer) throws Exception
+    {
+        int result = 0;
+
+        result = mAdxl345.read(reg, buffer, 0, buffer.length);
 
         return result;
     }
@@ -349,60 +334,87 @@ public class ADXL345
 
     private void writeRegister(int regiter, int value) throws Exception
     {
-        writeRegister(regiter, value, 0xFF);
+        writeRegister(regiter, 0xFF, value);
     }
 
-    public void calibrate(Axis axis) throws Exception
+    public Calibration calibrate(Axis axis) throws Exception
     {
         double[] buffer = new double[20];
 
         for (int i = 0; i < 20; i++)
         {
+            // consecutive reads to the same register
             buffer[i] = readValue(axis);
         }
 
-        mStatistics[axis.getValue()] = new Statistics(getMean(buffer), getMax(buffer), getMin(buffer));
+        return new Calibration(getMean(buffer), getMax(buffer), getMin(buffer));
     }
 
     public void calibrate() throws Exception
     {
-        calibrate(Axis.X);
-        calibrate(Axis.Y);
-        calibrate(Axis.Z);
-    }
-
-    private double[] getCalOutValues() throws Exception
-    {
-        double[] retVal = readValues();
-
-        for (int i = 0; i < 3; i++)
-        {
-            if (retVal[i] >= mStatistics[i].getMin() && retVal[i] <= mStatistics[i].getMax())
-            {
-                retVal[i] = 0d;
-            }
-            else
-            {
-                retVal[i] = retVal[i] - mStatistics[i].getMean();
-            }
-        }
-
-        return retVal;
+        mSamples.setCalibration(calibrate(Axis.X), calibrate(Axis.X), calibrate(Axis.X), ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD);
     }
 
     public void open() throws Exception
     {
         init();
         calibrate();
+        mInitialized = true;
     }
 
-    public double[] getValues() throws Exception
+    public SampleBean[] getSamples(int count) throws Exception
     {
-        return readValues();
+        return mSamples.getSamples(count);
     }
 
-    public double[] getCalValues() throws Exception
+    public SampleBean[] getSamples() throws Exception
     {
-        return getCalOutValues();
+        return mSamples.getAllSamples();
+    }
+
+    @Override
+    public void run()
+    {
+        boolean run = mInitialized;
+        try
+        {
+            int entries;
+            while (run)
+            {
+                entries = 0;
+                entries = i2cRead(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
+
+                if ((32 <= entries) && ((32 * 10) > mSamples.size()))
+                {
+                    bufferSamples(entries);
+                }
+                else Thread.sleep(10);
+            }
+        }
+        catch (Exception e1)
+        {
+            e1.printStackTrace();
+        }
+    }
+
+    private void bufferSample() throws Exception
+    {
+        byte[] buffer = new byte[6];
+
+        int count = i2cRead(ADXL345_REG_R_DATAX0, buffer);
+        if (buffer.length != count)
+        {
+            throw new Exception("Read failed");
+        }
+
+        mSamples.addRawSample(System.currentTimeMillis(), buffer);
+    }
+
+    private void bufferSamples(int entries) throws Exception
+    {
+        for (int i = 0; i < entries; i++)
+        {
+            bufferSample();
+        }
     }
 }
