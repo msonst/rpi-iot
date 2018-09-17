@@ -1,7 +1,5 @@
 package de.sonsts.rpi.i2c.sensor;
 
-import java.io.IOException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -18,7 +16,7 @@ public class ADXL345 implements Runnable
 
     public enum DataRate
     {
-        BR3200(0xF), BR1600(100);
+        DR3200(0x0F), DR1600(0x0E), DR800(0x0D), DR400(0x0C), DR200(0x0B), DR100(0x0A), DR50(0x09), DR25(0x08);
 
         private int mDataRate;
 
@@ -352,7 +350,7 @@ public class ADXL345 implements Runnable
 
     public void calibrate() throws Exception
     {
-        mSamples.setCalibration(calibrate(Axis.X), calibrate(Axis.X), calibrate(Axis.X), ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD);
+        mSamples.setCalibration(calibrate(Axis.X), calibrate(Axis.Y), calibrate(Axis.Z), ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD);
     }
 
     public void open() throws Exception
@@ -384,11 +382,15 @@ public class ADXL345 implements Runnable
                 entries = 0;
                 entries = i2cRead(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
 
-                if ((32 <= entries) && ((32 * 10) > mSamples.size()))
+                if ((32 <= entries) && (32 > mSamples.size()))
                 {
                     bufferSamples(entries);
+                    entries = i2cRead(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
                 }
-                else Thread.sleep(10);
+                else
+                {
+                    Thread.sleep(10);
+                }
             }
         }
         catch (Exception e1)

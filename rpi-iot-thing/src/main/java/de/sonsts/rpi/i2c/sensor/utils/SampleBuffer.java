@@ -34,10 +34,10 @@ public class SampleBuffer
 
     public void addRawSample(long timeStamp, double x, double y, double z)
     {
-        x = mCalibrationX.calibrate(x);
-        y = mCalibrationY.calibrate(y);
-        z = mCalibrationZ.calibrate(z);
-        
+//        x = mCalibrationX.calibrate(x);
+//        y = mCalibrationY.calibrate(y);
+//        z = mCalibrationZ.calibrate(z);
+
         synchronized (mSamples)
         {
             mSamples.add(new SampleBean(timeStamp, x, y, z));
@@ -75,12 +75,13 @@ public class SampleBuffer
         return (null != retVal) ? retVal : new SampleBean[0];
     }
 
-    public static double toDouble(byte high, byte low)
+    public static int toDouble(int high, int low)
     {
-        double retVal = 0;
+        int retVal = 0;
 
-        retVal = (high >= 0 && high <= 0x7f) ? high : high - 0x100;
-        retVal = ((retVal < 0) ? (retVal * 256 - low) : (retVal * 256 + low));
+        // retVal = (high >= 0 && high <= 0x7f) ? high : high - 0x100;
+        // retVal = ((retVal < 0) ? (retVal * 256 - low) : (retVal * 256 + low));
+        retVal = (high << 8) | (low);
 
         return retVal;
     }

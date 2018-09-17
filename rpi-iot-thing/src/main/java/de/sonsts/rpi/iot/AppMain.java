@@ -28,9 +28,8 @@ public class AppMain
         I2CDevice dev = null;
         Thread adxl345Thread = null;
 
-        ObjectMapper mapper =  JsonFactory.create();
+        ObjectMapper mapper = JsonFactory.create();
 
-        
         MqttClient client = new MqttClient("tcp://192.168.0.8:1883", MqttClient.generateClientId());
         client.connect();
         MqttMessage message = new MqttMessage();
@@ -55,7 +54,7 @@ public class AppMain
             throw new Exception("Failed to get device");
         }
 
-        adxl345 = new ADXL345(dev, ADXL345.DataRate.BR3200, ADXL345.Range.R2G);
+        adxl345 = new ADXL345(dev, ADXL345.DataRate.DR100, ADXL345.Range.R2G);
 
         if (null != adxl345)
         {
@@ -66,16 +65,20 @@ public class AppMain
 
         while ((null != adxl345) && (null != adxl345Thread) && adxl345Thread.isAlive())
         {
-            SampleBean[] values = adxl345.getSamples();
+            SampleBean[] values = adxl345.getSamples(32);
 
             if (0 != values.length)
             {
-                String strMsg = mapper.toJson(values); 
+                String strMsg = mapper.toJson(values);
 
                 message.setPayload(strMsg.getBytes());
                 client.publish("mqtt/gyro", message);
+//                System.out.println("Samples: " + values.length);
 
-                System.out.println("Samples: " + values.length);
+                for (SampleBean s : values)
+                {
+                    System.out.println(s);
+                }
             }
             else
             {
