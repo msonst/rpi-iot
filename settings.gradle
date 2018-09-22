@@ -13,4 +13,5 @@ rootProject.name = 'rpi-iot'
 include 'rpi-iot-common'
 include 'rpi-iot-server'  
 include 'rpi-iot-thing'
+include 'rpi-iot-fft'
 

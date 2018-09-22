@@ -14,7 +14,6 @@ sourceSets {
 
 dependencies {
   compile project(':rpi-iot-common')
-	compile group: 'com.rabbitmq', name: 'amqp-client', version: '5.4.1'
 }
 
 jar {

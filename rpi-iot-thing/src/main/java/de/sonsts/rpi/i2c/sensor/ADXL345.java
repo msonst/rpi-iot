@@ -7,8 +7,8 @@ import com.pi4j.io.i2c.I2CDevice;
 
 import de.sonsts.rpi.i2c.sensor.utils.BitUtils;
 import de.sonsts.rpi.i2c.sensor.utils.Calibration;
-import de.sonsts.rpi.i2c.sensor.utils.SampleBean;
 import de.sonsts.rpi.i2c.sensor.utils.SampleBuffer;
+import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 
 public class ADXL345 implements Runnable
 {
@@ -91,7 +91,7 @@ public class ADXL345 implements Runnable
     private final static double SENSORS_DPS_TO_RADS = (0.017453293F);
     private final static double SENSORS_GAUSS_TO_MICROTESLA = (100);
 
-    public final static int ADXL345_DEVID = 0xE5;
+    public final static int ADXL345_DEVID = 0x53;
 
     private final static int ADXL345_REG_R_DEVID = 0x00;// R DeviceID
     // private final static int ADXL345_RESERVED = 0x01 to 0x1C ;// Reserved do not access
@@ -310,7 +310,7 @@ public class ADXL345 implements Runnable
         return result;
     }
 
-    public ADXL345(I2CDevice dev, DataRate dataRate, Range range)
+    public ADXL345(I2CDevice dev, DataRate dataRate, Range range) throws Exception
     {
         if ((null == dev) || (null == dataRate) || (null == range))
         {
@@ -320,6 +320,10 @@ public class ADXL345 implements Runnable
         mAdxl345 = dev;
         mBaudRate = dataRate;
         mRange = range;
+        
+        init();
+        calibrate();
+        mInitialized = true;
     }
 
     private void writeRegister(int register, int mask, int value) throws Exception
@@ -353,19 +357,12 @@ public class ADXL345 implements Runnable
         mSamples.setCalibration(calibrate(Axis.X), calibrate(Axis.Y), calibrate(Axis.Z), ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD);
     }
 
-    public void open() throws Exception
-    {
-        init();
-        calibrate();
-        mInitialized = true;
-    }
-
-    public SampleBean[] getSamples(int count) throws Exception
+    public DoubleSampleValue[] getSamples(int count) throws Exception
     {
         return mSamples.getSamples(count);
     }
 
-    public SampleBean[] getSamples() throws Exception
+    public DoubleSampleValue[] getSamples() throws Exception
     {
         return mSamples.getAllSamples();
     }

@@ -1,19 +1,19 @@
 package de.sonsts.rpi.iot;
 
-import java.io.IOException;
-import java.util.Arrays;
-
-import org.boon.json.JsonFactory;
-import org.boon.json.ObjectMapper;
-import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.eclipse.paho.client.mqttv3.MqttMessage;
+import java.util.HashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import com.pi4j.io.i2c.I2CBus;
 import com.pi4j.io.i2c.I2CDevice;
 import com.pi4j.io.i2c.I2CFactory;
 
 import de.sonsts.rpi.i2c.sensor.ADXL345;
-import de.sonsts.rpi.i2c.sensor.utils.SampleBean;
+import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessage;
+import de.sonsts.rpi.iot.communication.common.messaage.payload.SampleValuePayload;
+import de.sonsts.rpi.iot.communication.producer.MessageProducer;
 
 /**
  * @author sonst00m
@@ -21,18 +21,18 @@ import de.sonsts.rpi.i2c.sensor.utils.SampleBean;
  */
 public class AppMain
 {
+    private static ScheduledExecutorService mExecutorService;
+
     public static void main(String[] args) throws Exception
     {
-        ADXL345 adxl345 = null;
+        mExecutorService = Executors.newScheduledThreadPool(2);
+
+        MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> producer = new MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>>();
+        HashMap<Integer, String> mapping = new HashMap<Integer, String>();
+        // mapping.put(1, )
+
         I2CBus bus = null;
         I2CDevice dev = null;
-        Thread adxl345Thread = null;
-
-        ObjectMapper mapper = JsonFactory.create();
-
-        MqttClient client = new MqttClient("tcp://192.168.0.8:1883", MqttClient.generateClientId());
-        client.connect();
-        MqttMessage message = new MqttMessage();
 
         bus = I2CFactory.getInstance(I2CBus.BUS_1);
         if (null == bus)
@@ -40,50 +40,32 @@ public class AppMain
             throw new Exception("Failed to get I2C");
         }
 
-        try
-        {
-            dev = bus.getDevice(0x53);// ADXL345.ADXL345_DEVID);
-        }
-        catch (IOException e)
-        {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        dev = bus.getDevice( ADXL345.ADXL345_DEVID);
+
         if (null == dev)
         {
             throw new Exception("Failed to get device");
         }
 
-        adxl345 = new ADXL345(dev, ADXL345.DataRate.DR100, ADXL345.Range.R2G);
+        ADXL345 adxl345 = new ADXL345(dev, ADXL345.DataRate.DR100, ADXL345.Range.R2G);
+        mExecutorService.scheduleAtFixedRate(adxl345, 0, 10, TimeUnit.MILLISECONDS);
+        mExecutorService.scheduleAtFixedRate(new AccellerometerProducer(adxl345, producer, mapping), 0, 10, TimeUnit.MILLISECONDS);
 
-        if (null != adxl345)
+        Runtime.getRuntime().addShutdownHook(new Thread()
         {
-            adxl345.open();
-            adxl345Thread = new Thread(adxl345);
-            adxl345Thread.start();
-        }
-
-        while ((null != adxl345) && (null != adxl345Thread) && adxl345Thread.isAlive())
-        {
-            SampleBean[] values = adxl345.getSamples(32);
-
-            if (0 != values.length)
+            public void run()
             {
-                String strMsg = mapper.toJson(values);
-
-                message.setPayload(strMsg.getBytes());
-                client.publish("mqtt/gyro", message);
-//                System.out.println("Samples: " + values.length);
-
-                for (SampleBean s : values)
+                mExecutorService.shutdown();
+                try
                 {
-                    System.out.println(s);
+                    mExecutorService.awaitTermination(10, TimeUnit.SECONDS);
                 }
+                catch (InterruptedException e)
+                {
+                }
+                mExecutorService.shutdown();
             }
-            else
-            {
-                Thread.sleep(10);
-            }
-        }
+        });
+
     }
 }

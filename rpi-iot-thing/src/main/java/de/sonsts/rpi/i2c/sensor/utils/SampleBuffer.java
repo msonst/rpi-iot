@@ -5,11 +5,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+
 public class SampleBuffer
 {
     private static final long serialVersionUID = 7627084267329172654L;
 
-    private Queue<SampleBean> mSamples = new LinkedList<SampleBean>();
+    private Queue<DoubleSampleValue> mSamples = new LinkedList<DoubleSampleValue>();
     private Calibration mCalibrationX;
     private Calibration mCalibrationY;
     private Calibration mCalibrationZ;
@@ -27,12 +29,12 @@ public class SampleBuffer
         mGain = gain;
     }
 
-    public void addSample(SampleBean sample)
+    public void addSample(DoubleSampleValue sample)
     {
         mSamples.add(sample);
     }
 
-    public void addRawSample(long timeStamp, double x, double y, double z)
+    public void addRawSample(long timeStamp, int signalId, double x, double y, double z)
     {
 //        x = mCalibrationX.calibrate(x);
 //        y = mCalibrationY.calibrate(y);
@@ -40,14 +42,14 @@ public class SampleBuffer
 
         synchronized (mSamples)
         {
-            mSamples.add(new SampleBean(timeStamp, x, y, z));
+            mSamples.add(new DoubleSampleValue(timeStamp, signalId, x, y, z));
         }
     }
 
-    public SampleBean[] getSamples(int count)
+    public DoubleSampleValue[] getSamples(int count)
     {
-        SampleBean[] retVal = null;
-        List<SampleBean> tmp = new ArrayList<>();
+        DoubleSampleValue[] retVal = null;
+        List<DoubleSampleValue> tmp = new ArrayList<>();
 
         synchronized (mSamples)
         {
@@ -57,30 +59,28 @@ public class SampleBuffer
             }
         }
 
-        retVal = tmp.toArray(new SampleBean[0]);
+        retVal = tmp.toArray(new DoubleSampleValue[0]);
 
-        return (null != retVal) ? retVal : new SampleBean[0];
+        return (null != retVal) ? retVal : new DoubleSampleValue[0];
     }
 
-    public SampleBean[] getAllSamples()
+    public DoubleSampleValue[] getAllSamples()
     {
-        SampleBean[] retVal = null;
+        DoubleSampleValue[] retVal = null;
 
         synchronized (mSamples)
         {
-            retVal = mSamples.toArray(new SampleBean[0]);
+            retVal = mSamples.toArray(new DoubleSampleValue[0]);
             mSamples.clear();
         }
 
-        return (null != retVal) ? retVal : new SampleBean[0];
+        return (null != retVal) ? retVal : new DoubleSampleValue[0];
     }
 
     public static int toDouble(int high, int low)
     {
         int retVal = 0;
 
-        // retVal = (high >= 0 && high <= 0x7f) ? high : high - 0x100;
-        // retVal = ((retVal < 0) ? (retVal * 256 - low) : (retVal * 256 + low));
         retVal = (high << 8) | (low);
 
         return retVal;
@@ -95,7 +95,7 @@ public class SampleBuffer
             values[i] = toDouble(buffer[i * 2 + 1], buffer[i * 2]) * mGain;
         }
 
-        addRawSample(timeStamp, values[0], values[1], values[2]);
+        addRawSample(timeStamp, 0, values[0], values[1], values[2]);
     }
 
     public int size()

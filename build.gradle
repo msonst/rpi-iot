@@ -1,7 +1,7 @@
 allprojects {
     apply plugin: 'java'
     group = 'de.sonsts'
-    sourceCompatibility = 1.7
+    sourceCompatibility = 1.8
 }
 
 subprojects {
@@ -16,8 +16,10 @@ subprojects {
         compile group: 'commons-io', name: 'commons-io', version: '2.5'
         compile group: 'commons-collections', name: 'commons-collections', version: '3.2'
         compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.11.1'
+        compile group: 'io.fastjson', name: 'boon', version: '0.34'
         
         testCompile 'org.mockito:mockito-all:1.9.5'
         testCompile 'junit:junit:4.12' 
+        testCompile group: 'org.apache.qpid', name: 'qpid-broker', version: '6.0.2'
     }
 }
