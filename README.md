@@ -63,11 +63,8 @@ RabbitMq MQTT: tcp://IP:1883
 RaabbitMq AMPQ: tcp://IP:5672
 Map: IP/1880/worldmap
 Dashboard: IP/1880/ui
-<<<<<<< HEAD
-
 
 gradlew rpi-iot-server:build
 gradlew rpi-iot-thing:build
-=======
->>>>>>> branch 'master' of https://github.com/msonst/rpi-iot.git
+
 ```
