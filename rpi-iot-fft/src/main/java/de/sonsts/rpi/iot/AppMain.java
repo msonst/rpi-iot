@@ -30,7 +30,7 @@ public class AppMain
         mExecutorService = Executors.newScheduledThreadPool(2);
 
         MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>> producer = new MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>>(
-                IotTopic.LIVE.combine("fft"));
+                IotTopic.LIVE.combine("fft"), new IotClientFactory());
         HashMap<Integer, String> mapping = new HashMap<Integer, String>();
         // mapping.put(1, )
 

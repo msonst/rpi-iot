@@ -5,11 +5,14 @@ import java.util.HashMap;
 
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.messaage.AbstractMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessageFactory;
+import de.sonsts.rpi.iot.communication.common.messaage.cannel.IotTopic;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.MappingPayloadDescriptor;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.SampleValuePayload;
 import de.sonsts.rpi.iot.communication.producer.MessageProducer;
+import de.sonsts.rpi.iot.communication.producer.SendCallback;
 
 //@formatter:off
 /******************************************************************************
@@ -59,7 +62,20 @@ public class Fft
             {
                 DocumentMessage<SampleValuePayload<ComplexValue>> documentMessage = DocumentMessageFactory.createComplexValueMessage(
                         new MappingPayloadDescriptor<Integer, String>(mMapping), fftValuesX);
-                mProducer.send(documentMessage);
+                mProducer.send(documentMessage, new SendCallback()
+                {
+                    @Override
+                    public <M extends AbstractMessage> void onSent(M message)
+                    {
+                        System.out.println("Send Ok");
+                    }
+                    
+                    @Override
+                    public <M extends AbstractMessage> void onError(M message, Exception exception)
+                    {
+                        System.out.println("Sending failed " + Arrays.toString(exception.getStackTrace()));
+                    }
+                });
                 
                 //TODO: payload descriptor new descriptor fft(signals, freq)
             }
