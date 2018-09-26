@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.Quality;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.CrudCommandPayload;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.MappingPayloadDescriptor;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.SampleValuePayload;
@@ -51,18 +52,22 @@ public class MessageTest
         for (int i = 0; i < 10000; i++)
         {
             mapping.put(i, "Signal" + i);
-            values.add(new DoubleSampleValue(i, 45454, 4242, 4243, 4244));
+            values.add(new DoubleSampleValue(1, 2, 3, Quality.GOOD));
             cValues.add(new ComplexValue(i, 0));
         }
 
         DocumentMessage<SampleValuePayload<DoubleSampleValue>> documentDSValueMessage = DocumentMessageFactory
-                .createDoubleSampleValueMessage(new MappingPayloadDescriptor<Integer, String>(mapping),
-                        values.toArray(new DoubleSampleValue[0]));
+                .createDoubleSampleValueMessage(new MappingPayloadDescriptor<Integer, String>(mapping), values);
         objectMapper.writeValue(jsonData, documentDSValueMessage);
+        // System.out.println(jsonData);
+
         documentDSValueMessage = objectMapper.readValue(jsonData.toString().getBytes(), DocumentMessage.class);
+        SampleValuePayload<DoubleSampleValue> payload = documentDSValueMessage.getPayload();
+        List<DoubleSampleValue> values2 = payload.getValues();
+        DoubleSampleValue doubleSampleValue = values2.get(0);
 
         DocumentMessage<SampleValuePayload<ComplexValue>> documentCMessage = DocumentMessageFactory.createComplexValueMessage(
-                new MappingPayloadDescriptor<Integer, String>(mapping), cValues.toArray(new ComplexValue[0]));
+                new MappingPayloadDescriptor<Integer, String>(mapping), cValues);
         objectMapper.writeValue(jsonData, documentCMessage);
         documentCMessage = objectMapper.readValue(jsonData.toString().getBytes(), DocumentMessage.class);
     }

@@ -10,6 +10,28 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 public abstract class SampleValue
 {
     private long timeStamp;
+    private Quality quality = Quality.UNINITIALIZED;
+    private int signalId;
+
+    public int getSignalId()
+    {
+        return signalId;
+    }
+
+    public void setSignalId(int signalId)
+    {
+        this.signalId = signalId;
+    }
+
+    public Quality getQuality()
+    {
+        return quality;
+    }
+
+    public void setQuality(Quality quality)
+    {
+        this.quality = quality;
+    }
 
     public long getTimeStamp()
     {

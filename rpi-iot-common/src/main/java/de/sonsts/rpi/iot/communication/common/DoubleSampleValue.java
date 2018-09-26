@@ -2,67 +2,34 @@ package de.sonsts.rpi.iot.communication.common;
 
 public class DoubleSampleValue extends SampleValue
 {
-    private double x;
-    private double y;
-    private double z;
-    private int mSignalId;
+    private double value;
 
     public DoubleSampleValue()
     {
     }
 
-    public DoubleSampleValue(long timeStamp, int signalId, double x, double y, double z)
+    public DoubleSampleValue(int signalId, long timeStamp, double value, Quality quality)
     {
-        mSignalId = signalId;
+        setSignalId(signalId);
         setTimeStamp(timeStamp);
-        setX(x);
-        setY(y);
-        setZ(z);
+        setValue(value);
+        setQuality(quality);
     }
 
-    public int getSignalId()
+    public double getValue()
     {
-        return mSignalId;
+        return value;
     }
 
-    public void setSignalId(int signalId)
+    public void setValue(double value)
     {
-        mSignalId = signalId;
-    }
-
-    public double getX()
-    {
-        return this.x;
-    }
-
-    public double getY()
-    {
-        return this.y;
-    }
-
-    public double getZ()
-    {
-        return this.z;
-    }
-
-    public void setX(double x)
-    {
-        this.x = x;
-    }
-
-    public void setY(double y)
-    {
-        this.y = y;
-    }
-
-    public void setZ(double z)
-    {
-        this.z = z;
+        this.value = value;
     }
 
     @Override
     public String toString()
     {
-        return "DoubleSampleValue [timeStamp=" + getTimeStamp() + ", x=" + x + ", y=" + y + ", z=" + z + "]";
+        return "DoubleSampleValue [signalId=" + getSignalId() + ", timeStamp=" + getTimeStamp() + ", value=" + getValue() + ", quality="
+                + getQuality() + "]";
     }
 }

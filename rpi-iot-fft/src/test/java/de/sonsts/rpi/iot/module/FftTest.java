@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.Quality;
 
 public class FftTest
 {
@@ -29,13 +30,13 @@ public class FftTest
         List<DoubleSampleValue> values = new ArrayList<DoubleSampleValue>();
 
         HashMap<Integer, String> mapping = new HashMap<Integer, String>();
-        for (int i = 0; i < 2048; i++)
+        for (int i = 0; i < 2049; i++)
         {
             mapping.put(i, "Signal" + i);
-            values.add(new DoubleSampleValue(i, i, i, i, i));
+            values.add(new DoubleSampleValue(i, i, 3, Quality.GOOD));
         }
 
         // FFT of original data
-        new Fft(null, null).compute(values.toArray(new DoubleSampleValue[0]));
+        System.out.println(new Fft(null, null).compute(values));
     }
 }

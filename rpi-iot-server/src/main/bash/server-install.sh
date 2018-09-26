@@ -54,7 +54,9 @@ sudo chown -R :docker /iot-server/docker
 cd /data/nodered/
 sudo apt-get -y install npm
 npm i node-red-dashboard
-npm i --save node-red-contrib-web-worldmap
+npm i --save node-red-contrib-web-worldmap  
+npm i node-red-contrib-amqp
+npm i node-red-contrib-amqp2
 # nodejs>8 required: npm i node-red-vis
 # nodejs>8 required: npm i node-red-node-email
 #npm i node-red-node-watson

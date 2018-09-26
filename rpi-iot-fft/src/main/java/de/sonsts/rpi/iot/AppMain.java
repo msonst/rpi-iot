@@ -1,6 +1,8 @@
 package de.sonsts.rpi.iot;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -8,13 +10,19 @@ import java.util.concurrent.TimeUnit;
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 import de.sonsts.rpi.iot.communication.common.IotClientFactory;
+import de.sonsts.rpi.iot.communication.common.SpectrumValue;
+import de.sonsts.rpi.iot.communication.common.messaage.AbstractMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessage;
+import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessageFactory;
 import de.sonsts.rpi.iot.communication.common.messaage.MessageDispatcher;
 import de.sonsts.rpi.iot.communication.common.messaage.MessageHandler;
 import de.sonsts.rpi.iot.communication.common.messaage.cannel.IotTopic;
+import de.sonsts.rpi.iot.communication.common.messaage.payload.MappingPayloadDescriptor;
+import de.sonsts.rpi.iot.communication.common.messaage.payload.PayloadDescriptor;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.SampleValuePayload;
 import de.sonsts.rpi.iot.communication.consumer.MessageConsumer;
 import de.sonsts.rpi.iot.communication.producer.MessageProducer;
+import de.sonsts.rpi.iot.communication.producer.SendCallback;
 import de.sonsts.rpi.iot.module.Fft;
 
 /**
@@ -29,8 +37,8 @@ public class AppMain
     {
         mExecutorService = Executors.newScheduledThreadPool(2);
 
-        MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>> producer = new MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>>(
-                IotTopic.LIVE.combine("fft"), new IotClientFactory());
+        MessageProducer<DocumentMessage<SampleValuePayload<SpectrumValue>>> producer = new MessageProducer<DocumentMessage<SampleValuePayload<SpectrumValue>>>(
+                IotTopic.LIVE.combine("fft"), new IotClientFactory(), "live.fft");
         HashMap<Integer, String> mapping = new HashMap<Integer, String>();
         // mapping.put(1, )
 
@@ -45,17 +53,51 @@ public class AppMain
                 SampleValuePayload<DoubleSampleValue> payload = message.getPayload();
                 if (null != payload)
                 {
-                    DoubleSampleValue[] values = payload.getValues();
-                    if (null != values)
+                    List<DoubleSampleValue> values = payload.getValues();
+                    MappingPayloadDescriptor<Integer, String> payloadDescriptor = payload.getPayloadDescriptor();
+                    String signalId = payloadDescriptor.getSignalMapping().get(values.get(0).getSignalId());
+                    
+                    // TODO: payload descriptor new descriptor fft(signals, freq)
+
+                    if ((null != values) && (values.size() > 0))
                     {
-                        fft.compute(values);
+                        List<SpectrumValue> spectrumValues = fft.compute(values);
+
+                        System.out.println();
+
+                        for (SpectrumValue spectrumValue : spectrumValues)
+                        {
+                            System.out.println(String.format("%s: %.1f;%.3f",signalId, spectrumValue.getFrequency(), spectrumValue.getMag()));
+                        }
+
+                        if ((null != producer) && (null != spectrumValues))
+                        {
+                            DocumentMessage<SampleValuePayload<SpectrumValue>> documentMessage = DocumentMessageFactory
+                                    .createSpectrumValueMessage(new MappingPayloadDescriptor<Integer, String>(), spectrumValues);
+
+                            producer.send(documentMessage, new SendCallback()
+                            {
+                                @Override
+                                public <M extends AbstractMessage> void onSent(M message)
+                                {
+                                    // System.out.println(System.currentTimeMillis() + " Send Ok");
+                                }
+
+                                @Override
+                                public <M extends AbstractMessage> void onError(M message, Exception exception)
+                                {
+                                    // System.out.println(System.currentTimeMillis() + " Sending failed "
+                                    // + Arrays.toString(exception.getStackTrace()));
+                                }
+                            });
+                        }
                     }
                 }
             }
         });
 
         MessageConsumer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> consumer = new MessageConsumer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>>(
-                IotTopic.LIVE, new IotClientFactory(), messageDispatcher);
+                IotTopic.LIVE, new IotClientFactory(), messageDispatcher, "live.samples");
 
         producer.open();
         consumer.open();

@@ -34,20 +34,28 @@ import java.util.Objects;
 //@formatter:on
 public class ComplexValue extends SampleValue
 {
-    private final double re; // the real part
-    private final double im; // the imaginary part
+    private double re; // the real part
+    private double im; // the imaginary part
+
+    public ComplexValue()
+    {
+    }
+
+    public void setRe(double re)
+    {
+        this.re = re;
+    }
+
+    public void setIm(double im)
+    {
+        this.im = im;
+    }
 
     // create a new object with the given real and imaginary parts
     public ComplexValue(double real, double imag)
     {
         re = real;
         im = imag;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "ComplexValue [re=" + re + ", im=" + im + "]";
     }
 
     // return abs/modulus/magnitude
@@ -60,6 +68,21 @@ public class ComplexValue extends SampleValue
     public double phase()
     {
         return Math.atan2(im, re);
+    }
+
+    // See Section 3.3.
+    public boolean equals(Object x)
+    {
+        if (x == null) return false;
+        if (this.getClass() != x.getClass()) return false;
+        ComplexValue that = (ComplexValue) x;
+        return (this.re == that.re) && (this.im == that.im);
+    }
+
+    // See Section 3.3.
+    public int hashCode()
+    {
+        return Objects.hash(re, im);
     }
 
     // return a new Complex object whose value is (this + b)
@@ -109,12 +132,12 @@ public class ComplexValue extends SampleValue
     }
 
     // return the real or imaginary part
-    public double re()
+    public double getRe()
     {
         return re;
     }
 
-    public double im()
+    public double getIm()
     {
         return im;
     }
@@ -159,19 +182,9 @@ public class ComplexValue extends SampleValue
         return sum;
     }
 
-    // See Section 3.3.
-    public boolean equals(Object x)
+    @Override
+    public String toString()
     {
-        if (x == null) return false;
-        if (this.getClass() != x.getClass()) return false;
-        ComplexValue that = (ComplexValue) x;
-        return (this.re == that.re) && (this.im == that.im);
+        return "ComplexValue [re=" + re + ", im=" + im + "]";
     }
-
-    // See Section 3.3.
-    public int hashCode()
-    {
-        return Objects.hash(re, im);
-    }
-
 }

@@ -1,14 +1,17 @@
 package de.sonsts.rpi.iot.module;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.Quality;
+import de.sonsts.rpi.iot.communication.common.SpectrumValue;
 import de.sonsts.rpi.iot.communication.common.messaage.AbstractMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessageFactory;
-import de.sonsts.rpi.iot.communication.common.messaage.cannel.IotTopic;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.MappingPayloadDescriptor;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.SampleValuePayload;
 import de.sonsts.rpi.iot.communication.producer.MessageProducer;
@@ -30,56 +33,63 @@ import de.sonsts.rpi.iot.communication.producer.SendCallback;
 // @formatter:on
 public class Fft
 {
-    private MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>> mProducer;
+    private MessageProducer<DocumentMessage<SampleValuePayload<SpectrumValue>>> mProducer;
     private HashMap<Integer, String> mMapping;
 
-    public Fft(MessageProducer<DocumentMessage<SampleValuePayload<ComplexValue>>> producer, HashMap<Integer, String> mapping)
+    public Fft(MessageProducer<DocumentMessage<SampleValuePayload<SpectrumValue>>> producer, HashMap<Integer, String> mapping)
     {
         mProducer = producer;
         mMapping = mapping;
     }
 
-    public void compute(DoubleSampleValue[] values)
+    private int upper_power_of_two(int v)
     {
+        int retVal = v;
+
+        retVal--;
+        retVal |= retVal >> 1;
+        retVal |= retVal >> 2;
+        retVal |= retVal >> 4;
+        retVal |= retVal >> 8;
+        retVal |= retVal >> 16;
+        retVal++;
+
+        return retVal;
+    }
+
+    public List<SpectrumValue> compute(List<DoubleSampleValue> values)
+    {
+        List<SpectrumValue> retVal = new ArrayList<SpectrumValue>();
+
         if (null != values)
         {
-            ComplexValue[] fftValuesX = new ComplexValue[values.length];
-            ComplexValue[] fftValuesY = new ComplexValue[values.length];
-            ComplexValue[] fftValuesZ = new ComplexValue[values.length];
+            DoubleSampleValue firstValue = values.get(0);
+            DoubleSampleValue lastValue = values.get(values.size() - 1);
 
-            for (int i = 0; i < values.length; i++)
+            long duration = lastValue.getTimeStamp() - firstValue.getTimeStamp();
+            int sampleCount = values.size();
+            double samplingFrequency = (double) sampleCount / duration * 1000; // fs: samples per second
+            int sa = upper_power_of_two(sampleCount); // TODO closest power of 2
+            double stepValue = samplingFrequency / (double) sa;
+
+            ComplexValue[] fftValues = new ComplexValue[sa];
+
+            for (int i = 0; i < fftValues.length; i++)
             {
-                fftValuesX[i] = new ComplexValue(values[i].getX(), 0);
-                fftValuesY[i] = new ComplexValue(values[i].getY(), 0);
-                fftValuesZ[i] = new ComplexValue(values[i].getZ(), 0);
+                DoubleSampleValue value = (i < sampleCount) ? values.get(i) : new DoubleSampleValue();
+
+                fftValues[i] = new ComplexValue(value.getValue(), 0);
             }
 
-            fft(fftValuesX);
-            fft(fftValuesY);
-            fft(fftValuesZ);
-
-            if (null != mProducer)
+            fft(fftValues);
+            
+            for (int i = 0; i < fftValues.length; i++)
             {
-                DocumentMessage<SampleValuePayload<ComplexValue>> documentMessage = DocumentMessageFactory.createComplexValueMessage(
-                        new MappingPayloadDescriptor<Integer, String>(mMapping), fftValuesX);
-                mProducer.send(documentMessage, new SendCallback()
-                {
-                    @Override
-                    public <M extends AbstractMessage> void onSent(M message)
-                    {
-                        System.out.println("Send Ok");
-                    }
-                    
-                    @Override
-                    public <M extends AbstractMessage> void onError(M message, Exception exception)
-                    {
-                        System.out.println("Sending failed " + Arrays.toString(exception.getStackTrace()));
-                    }
-                });
-                
-                //TODO: payload descriptor new descriptor fft(signals, freq)
+                retVal.add(new SpectrumValue(i, System.currentTimeMillis(), fftValues[i], i * stepValue, Quality.GOOD, sampleCount));
             }
         }
+
+        return retVal;
     }
 
     // compute the FFT of x[], assuming its length is a power of 2

@@ -1,46 +1,47 @@
 package de.sonsts.rpi.iot.communication.common.messaage.payload;
 
 import java.util.Arrays;
+import java.util.List;
 
 import de.sonsts.rpi.iot.communication.common.SampleValue;
 
 public class SampleValuePayload<M extends SampleValue> implements MessagePayload
 {
-    private M[] values;
+    private List<M> values;
     
-    private PayloadDescriptor payloadDescriptor;
+    private MappingPayloadDescriptor<Integer, String> payloadDescriptor;
 
     public SampleValuePayload()
     {
     }
 
-    public SampleValuePayload(M... values)
+    public SampleValuePayload(List<M> values)
     {
         this.values = values;
     }
 
-    public SampleValuePayload(PayloadDescriptor payloadDescriptor, M... values)
+    public SampleValuePayload(MappingPayloadDescriptor<Integer, String> payloadDescriptor, List<M> values)
     {
         this.values = values;
         this.payloadDescriptor =payloadDescriptor;
     }
 
-    public M[] getValues()
+    public List<M> getValues()
     {
         return values;
     }
 
-    public void setValues(M[] values)
+    public void setValues(List<M> values)
     {
         this.values = values;
     }
 
-    public PayloadDescriptor getPayloadDescriptor()
+    public MappingPayloadDescriptor<Integer, String> getPayloadDescriptor()
     {
         return payloadDescriptor;
     }
 
-    public void setPayloadDescriptor(PayloadDescriptor payloadDescriptor)
+    public void setPayloadDescriptor(MappingPayloadDescriptor<Integer, String> payloadDescriptor)
     {
         this.payloadDescriptor = payloadDescriptor;
     }
@@ -48,6 +49,6 @@ public class SampleValuePayload<M extends SampleValue> implements MessagePayload
     @Override
     public String toString()
     {
-        return "SampleValuePayload [values=" + Arrays.toString(values) + ", payloadDescriptor=" + payloadDescriptor + "]";
+       return "SampleValuePayload [values=" +values + ", payloadDescriptor=" + payloadDescriptor + "]";
     }
 }

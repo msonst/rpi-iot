@@ -2,8 +2,12 @@ package de.sonsts.rpi.iot;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 
 import de.sonsts.rpi.i2c.sensor.ADXL345;
+import de.sonsts.rpi.i2c.sensor.Axis;
+import de.sonsts.rpi.i2c.sensor.utils.AccellerometerMesurement;
+import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 import de.sonsts.rpi.iot.communication.common.messaage.AbstractMessage;
 import de.sonsts.rpi.iot.communication.common.messaage.DocumentMessage;
@@ -19,7 +23,8 @@ public class AccellerometerProducer implements Runnable
     private MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> mProducer;
     private HashMap<Integer, String> mMapping;
 
-    public AccellerometerProducer(ADXL345 adxl345, MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> producer, HashMap<Integer, String> mapping) 
+    public AccellerometerProducer(ADXL345 adxl345, MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> producer,
+            HashMap<Integer, String> mapping)
     {
         super();
         mAdxl345 = adxl345;
@@ -32,38 +37,43 @@ public class AccellerometerProducer implements Runnable
     {
         if ((null == mAdxl345) || (null == mProducer)) return;
 
-        DoubleSampleValue[] values = null;
+        AccellerometerMesurement measurement = null;
         try
         {
-            values = mAdxl345.getSamples(32);
+            measurement = mAdxl345.getMeasurement();
         }
         catch (Exception e)
         {
         }
 
-        if ((null != values) && (0 != values.length))
+        for (int i = 0; ((null != measurement) && (i < 3)); i++)
         {
-            DocumentMessage<SampleValuePayload<DoubleSampleValue>> documentMessage = DocumentMessageFactory.createDoubleSampleValueMessage(
-                    new MappingPayloadDescriptor<Integer, String>(mMapping), values);
-            
-            mProducer.send(documentMessage, new SendCallback()
+            List<DoubleSampleValue> values = measurement.getSamples(Axis.values()[i]);
+
+            if ((null != values) && (0 < values.size()))
             {
-                @Override
-                public <M extends AbstractMessage> void onSent(M message)
+                DocumentMessage<SampleValuePayload<DoubleSampleValue>> documentMessage = DocumentMessageFactory
+                        .createDoubleSampleValueMessage(new MappingPayloadDescriptor<Integer, String>(mMapping), values);
+
+                mProducer.send(documentMessage, new SendCallback()
                 {
-                    System.out.println("Send Ok");
-                }
-                
-                @Override
-                public <M extends AbstractMessage> void onError(M message, Exception exception)
-                {
-                    System.out.println("Sending failed " + Arrays.toString(exception.getStackTrace()));
-                }
-            });
-            
-            for (DoubleSampleValue s : values)
-            {
-                System.out.println(s);
+                    @Override
+                    public <M extends AbstractMessage> void onSent(M message)
+                    {
+//                        System.out.println("Send Ok");
+                    }
+
+                    @Override
+                    public <M extends AbstractMessage> void onError(M message, Exception exception)
+                    {
+//                        System.out.println("Sending failed " + Arrays.toString(exception.getStackTrace()));
+                    }
+                });
+
+//                for (DoubleSampleValue s : values)
+//                {
+//                    System.out.println(s);
+//                }
             }
         }
     }

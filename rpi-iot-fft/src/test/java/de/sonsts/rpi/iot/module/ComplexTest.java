@@ -27,8 +27,8 @@ public class ComplexTest
 
         System.out.println("a            = " + a);
         System.out.println("b            = " + b);
-        System.out.println("Re(a)        = " + a.re());
-        System.out.println("Im(a)        = " + a.im());
+        System.out.println("Re(a)        = " + a.getRe());
+        System.out.println("Im(a)        = " + a.getIm());
         System.out.println("b + a        = " + b.plus(a));
         System.out.println("a - b        = " + a.minus(b));
         System.out.println("a * b        = " + a.times(b));
