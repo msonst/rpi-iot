@@ -25,14 +25,34 @@ import de.sonsts.rpi.iot.communication.producer.MessageProducer;
  */
 public class AppMain
 {
-    private static ScheduledExecutorService mExecutorService;
+
+    public static I2CDevice initI2C() throws Exception
+    {
+        I2CBus bus = null;
+        I2CDevice retVal = null;
+
+        bus = I2CFactory.getInstance(I2CBus.BUS_1);
+        if (null == bus)
+        {
+            throw new Exception("Failed to get I2C");
+        }
+
+        retVal = bus.getDevice(ADXL345.ADXL345_DEVID);
+
+        if (null == retVal)
+        {
+            throw new Exception("Failed to get device");
+        }
+
+        return retVal;
+    }
 
     public static void main(String[] args) throws Exception
     {
-        mExecutorService = Executors.newScheduledThreadPool(2);
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(2);
 
         DataRate dataRate = DataRate.DR200;
-        
+
         MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>> producer = new MessageProducer<DocumentMessage<SampleValuePayload<DoubleSampleValue>>>(
                 IotTopic.LIVE, new IotClientFactory(), "live.samples");
         HashMap<Integer, String> mapping = new HashMap<Integer, String>();
@@ -40,26 +60,12 @@ public class AppMain
         mapping.put(Axis.Y.getValue(), "Y");
         mapping.put(Axis.Z.getValue(), "Z");
 
-        I2CBus bus = null;
-        I2CDevice dev = null;
-        
-        bus = I2CFactory.getInstance(I2CBus.BUS_1);
-        if (null == bus)
-        {
-            throw new Exception("Failed to get I2C");
-        }
+        I2CDevice i2cDevice = initI2C();
 
-        dev = bus.getDevice(ADXL345.ADXL345_DEVID);
-        
-        if (null == dev)
-        {
-            throw new Exception("Failed to get device");
-        }
-
-        ADXL345 adxl345 = new ADXL345(dev, dataRate, ADXL345.Range.R2G, ADXL345.CommunicationInterface.I2C);
-        mExecutorService.scheduleAtFixedRate(adxl345, 0, ADXL345.SAMPLECOUNT * dataRate.getMs(), TimeUnit.MILLISECONDS);
-        mExecutorService.scheduleAtFixedRate(new AccellerometerProducer(adxl345, producer, mapping), 0, 10, TimeUnit.MILLISECONDS);
-        mExecutorService.scheduleAtFixedRate(producer, 0, 10, TimeUnit.MILLISECONDS);
+        ADXL345 adxl345 = new ADXL345(i2cDevice, dataRate, ADXL345.Range.R2G, ADXL345.CommunicationInterface.I2C);
+        executorService.scheduleAtFixedRate(adxl345, 0, ADXL345.SAMPLECOUNT * dataRate.getMs(), TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(new AccellerometerProducer(adxl345, producer, mapping), 0, 10, TimeUnit.MILLISECONDS);
+        executorService.scheduleAtFixedRate(producer, 0, 10, TimeUnit.MILLISECONDS);
 
         Runtime.getRuntime().addShutdownHook(new Thread()
         {
@@ -68,8 +74,8 @@ public class AppMain
                 try
                 {
                     System.out.println("attempt to shutdown executor");
-                    mExecutorService.shutdown();
-                    mExecutorService.awaitTermination(5, TimeUnit.SECONDS);
+                    executorService.shutdown();
+                    executorService.awaitTermination(5, TimeUnit.SECONDS);
                 }
                 catch (InterruptedException e)
                 {
@@ -77,11 +83,11 @@ public class AppMain
                 }
                 finally
                 {
-                    if (!mExecutorService.isTerminated())
+                    if (!executorService.isTerminated())
                     {
                         System.err.println("cancel non-finished tasks");
                     }
-                    mExecutorService.shutdownNow();
+                    executorService.shutdownNow();
                     System.out.println("shutdown finished");
 
                     producer.close();
