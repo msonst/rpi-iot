@@ -44,6 +44,7 @@ sudo chmod +x server-install.sh
 sudo raspi-config
 > Interfacing Options > Enable SSH
 > Interfacing Options > Enable I2C
+> Interfacing Options > Enable SPI
 > Hostname > private-cloud
 > Advanced > Expand Filesystem
 > Localisation Options > Change Wi-fi Country > US

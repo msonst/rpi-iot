@@ -9,6 +9,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.NanoTime;
 import de.sonsts.rpi.iot.communication.common.Quality;
 
 public class FftTest
@@ -33,7 +34,7 @@ public class FftTest
         for (int i = 0; i < 2049; i++)
         {
             mapping.put(i, "Signal" + i);
-            values.add(new DoubleSampleValue(i, i, 3, Quality.GOOD));
+            values.add(new DoubleSampleValue(i, new NanoTime(i, 0), 3, Quality.GOOD));
         }
 
         // FFT of original data

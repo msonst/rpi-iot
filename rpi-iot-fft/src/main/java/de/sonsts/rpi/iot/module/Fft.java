@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
@@ -33,6 +34,8 @@ import de.sonsts.rpi.iot.communication.producer.SendCallback;
 // @formatter:on
 public class Fft
 {
+    private static final long NANOSECONDS_PER_SECOND = TimeUnit.SECONDS.toNanos(1);
+
     private MessageProducer<DocumentMessage<SampleValuePayload<SpectrumValue>>> mProducer;
     private HashMap<Integer, String> mMapping;
 
@@ -66,9 +69,9 @@ public class Fft
             DoubleSampleValue firstValue = values.get(0);
             DoubleSampleValue lastValue = values.get(values.size() - 1);
 
-            long duration = lastValue.getTimeStamp() - firstValue.getTimeStamp();
+            double duration = lastValue.getTimeStamp().subtract(firstValue.getTimeStamp()).longNano() / (double) NANOSECONDS_PER_SECOND;
             int sampleCount = values.size();
-            double samplingFrequency = (double) sampleCount / duration * 1000; // fs: samples per second
+            double samplingFrequency = (double) sampleCount / duration; // fs: samples per second
             int sa = upper_power_of_two(sampleCount); // TODO closest power of 2
             double stepValue = samplingFrequency / (double) sa;
 
@@ -82,7 +85,7 @@ public class Fft
             }
 
             fft(fftValues);
-            
+
             for (int i = 0; i < fftValues.length; i++)
             {
                 retVal.add(new SpectrumValue(i, System.currentTimeMillis(), fftValues[i], i * stepValue, Quality.GOOD, sampleCount));

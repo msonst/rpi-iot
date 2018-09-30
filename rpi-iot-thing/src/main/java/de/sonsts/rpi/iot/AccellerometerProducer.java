@@ -6,7 +6,6 @@ import java.util.List;
 
 import de.sonsts.rpi.i2c.sensor.ADXL345;
 import de.sonsts.rpi.i2c.sensor.Axis;
-import de.sonsts.rpi.i2c.sensor.utils.AccellerometerMesurement;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
 import de.sonsts.rpi.iot.communication.common.messaage.AbstractMessage;

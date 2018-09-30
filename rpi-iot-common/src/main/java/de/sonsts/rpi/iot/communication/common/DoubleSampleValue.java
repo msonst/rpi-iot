@@ -1,5 +1,6 @@
 package de.sonsts.rpi.iot.communication.common;
 
+
 public class DoubleSampleValue extends SampleValue
 {
     private double value;
@@ -8,7 +9,7 @@ public class DoubleSampleValue extends SampleValue
     {
     }
 
-    public DoubleSampleValue(int signalId, long timeStamp, double value, Quality quality)
+    public DoubleSampleValue(int signalId, NanoTime timeStamp, double value, Quality quality)
     {
         setSignalId(signalId);
         setTimeStamp(timeStamp);

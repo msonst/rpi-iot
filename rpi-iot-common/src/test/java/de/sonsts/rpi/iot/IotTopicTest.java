@@ -2,6 +2,8 @@ package de.sonsts.rpi.iot;
 
 import static org.junit.Assert.*;
 
+import java.sql.Timestamp;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

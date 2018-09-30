@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
         property = "@class")
 public abstract class SampleValue
 {
-    private long timeStamp;
+    private NanoTime timeStamp;
     private Quality quality = Quality.UNINITIALIZED;
     private int signalId;
 
@@ -33,12 +33,12 @@ public abstract class SampleValue
         this.quality = quality;
     }
 
-    public long getTimeStamp()
+    public NanoTime getTimeStamp()
     {
         return timeStamp;
     }
 
-    public void setTimeStamp(long timeStamp)
+    public void setTimeStamp(NanoTime timeStamp)
     {
         this.timeStamp = timeStamp;
     }

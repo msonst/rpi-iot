@@ -2,16 +2,18 @@ package de.sonsts.rpi.i2c.sensor;
 
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pi4j.io.i2c.I2CDevice;
+import com.pi4j.io.spi.SpiDevice;
 
-import de.sonsts.rpi.i2c.sensor.ADXL345.DataRate;
-import de.sonsts.rpi.i2c.sensor.utils.AccellerometerMesurement;
 import de.sonsts.rpi.i2c.sensor.utils.BitUtils;
 import de.sonsts.rpi.i2c.sensor.utils.Calibration;
+import de.sonsts.rpi.iot.AccellerometerMesurement;
+import de.sonsts.rpi.iot.communication.common.NanoTime;
 import de.sonsts.rpi.iot.communication.common.Quality;
 
 // /boot/config.txt
@@ -21,6 +23,7 @@ import de.sonsts.rpi.iot.communication.common.Quality;
 public class ADXL345 implements Runnable
 {
     final static Logger logger = LogManager.getLogger();
+    private static final long MICROSECONDS_PER_SECOND = TimeUnit.SECONDS.toMicros(1);
 
     public enum DataRate
     {
@@ -51,9 +54,14 @@ public class ADXL345 implements Runnable
             return mRateCode;
         }
 
-        public long getMs()
+        public long getUs()
         {
-            return (long) ((double) 1 / (double) getOutputDataRate() * 1000);
+            return (long) ((double) 1 / (double) getOutputDataRate() * MICROSECONDS_PER_SECOND);
+        }
+
+        public long getPeriod()
+        {
+            return (long) ((double) 1 / (double) getOutputDataRate());
         }
     }
 
@@ -211,11 +219,11 @@ public class ADXL345 implements Runnable
 
     private final static int ADXL345_MSK_FIFO_STATUS_FIFO_TRIG = (1 << 7);
     private final static int ADXL345_MSK_FIFO_STATUS_ENTRIES = ((1 << 5) | (1 << 4) | (1 << 3) | (1 << 2) | (1 << 1) | (1 << 0));
-    public static final int SAMPLECOUNT = 32;
+    public static final int WATERMARK = 32;
 
     private final double ADXL345_MG2G_MULTIPLIER = (0.004); // 4mg per lsb
 
-    private I2CDevice mAdxl345;
+    private I2CDevice mI2cAdxl345;
 
     private Range mRange;
 
@@ -224,6 +232,9 @@ public class ADXL345 implements Runnable
     private double mGain = ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD;
     private Calibration[] mCalibration;
     private CommunicationInterface mCommunicationInterface;
+    private SpiDevice mSpiAdxl345;
+    private AccellerometerMesurement mCurrentMeasurement = new AccellerometerMesurement();
+    private int mSamplesPerMeasurement;
 
     private static double getMax(double[] da)
     {
@@ -261,29 +272,6 @@ public class ADXL345 implements Runnable
         return mean / da.length;
     }
 
-    /*
-     * To be called after configuration, before measuring
-     */
-    private void init() throws Exception
-    {
-        if (null == mAdxl345)
-        {
-            throw new Exception("Device not initialized");
-        }
-
-        mCalibration = new Calibration[3];
-
-        mCalibration[Axis.X.getValue()] = new Calibration(0, 0, 0);
-        mCalibration[Axis.Y.getValue()] = new Calibration(0, 0, 0);
-        mCalibration[Axis.Z.getValue()] = new Calibration(0, 0, 0);
-
-        writeRegister(ADXL345_REG_RW_BW_RATE, ADXL345_MSK_BW_RATE_RATE, mBaudRate.getRateCode());
-        writeRegister(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_FIFO_MODE, FifoMode.FFFIFO.getValue());
-        writeRegister(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_SAMPLES, 0x0F);
-        writeRegister(ADXL345_REG_RW_DATA_FORMAT, ADXL345_MSK_DATA_FORMAT_RANGE, mRange.getValue());
-        writeRegister(ADXL345_REG_RW_POWER_CTL, ADXL345_MSK_POWER_CTL_MEASURE);
-    }
-
     private double readValue(Axis axis) throws Exception
     {
         int lA = 0, hA = 0;
@@ -307,57 +295,134 @@ public class ADXL345 implements Runnable
                 break;
         }
 
-        lV = (byte) i2cRead(lA);
-        hV = (byte) i2cRead(hA);
+        lV = (byte) read(lA);
+        hV = (byte) read(hA);
 
         return toDouble(hV, lV) * ADXL345_MG2G_MULTIPLIER * SENSORS_GRAVITY_STANDARD;
     }
 
-    private int i2cRead(int reg) throws Exception
+    private void init(DataRate dataRate, Range range, CommunicationInterface communicationInterface) throws Exception
     {
-        int result = 0;
-
-        result = mAdxl345.read(reg);
-
-        return result;
-    }
-
-    private int i2cRead(int reg, byte[] buffer) throws Exception
-    {
-        int result = 0;
-
-        result = mAdxl345.read(reg, buffer, 0, buffer.length);
-
-        return result;
-    }
-
-    public ADXL345(I2CDevice dev, DataRate dataRate, Range range, CommunicationInterface communicationInterface) throws Exception
-    {
-        if ((null == dev) || (null == dataRate) || (null == range))
+        if ((null == dataRate) || (null == range) || (null == communicationInterface))
         {
             throw new IllegalArgumentException("Parameter can't be null");
         }
 
-        mAdxl345 = dev;
         mBaudRate = dataRate;
         mRange = range;
         mCommunicationInterface = communicationInterface;
 
-        init();
+        mCalibration = new Calibration[3];
+
+        mCalibration[Axis.X.getValue()] = new Calibration(0, 0, 0);
+        mCalibration[Axis.Y.getValue()] = new Calibration(0, 0, 0);
+        mCalibration[Axis.Z.getValue()] = new Calibration(0, 0, 0);
+
+        write(ADXL345_REG_RW_BW_RATE, ADXL345_MSK_BW_RATE_RATE, mBaudRate.getRateCode());
+        write(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_FIFO_MODE, FifoMode.FFFIFO.getValue());
+        write(ADXL345_REG_RW_FIFO_CTL, ADXL345_MSK_FIFO_CTL_SAMPLES, 0x0F);
+        write(ADXL345_REG_RW_DATA_FORMAT, ADXL345_MSK_DATA_FORMAT_RANGE, mRange.getValue());
+
+        write(ADXL345_REG_RW_POWER_CTL, ADXL345_MSK_POWER_CTL_MEASURE);
+
         calibrate();
     }
 
-    private void writeRegister(int register, int mask, int value) throws Exception
+    public ADXL345(I2CDevice i2cDevice, DataRate dataRate, Range range, int samplesPerMeasurement) throws Exception
     {
-        int current = i2cRead(register);
-        int newValue = BitUtils.setValue(value, current, mask);
+        if (null == i2cDevice)
+        {
+            throw new IllegalArgumentException("Parameter can't be null");
+        }
 
-        mAdxl345.write(register, (byte) newValue);
+        mI2cAdxl345 = i2cDevice;
+        mSamplesPerMeasurement= samplesPerMeasurement;
+        
+        init(dataRate, range, CommunicationInterface.I2C);
     }
 
-    private void writeRegister(int regiter, int value) throws Exception
+    public ADXL345(SpiDevice spiDevice, DataRate dataRate, Range range, int samplesPerMeasurement) throws Exception
     {
-        writeRegister(regiter, 0xFF, value);
+        if (null == spiDevice)
+        {
+            throw new IllegalArgumentException("Parameter can't be null");
+        }
+
+        mSpiAdxl345 = spiDevice;
+        mSamplesPerMeasurement= samplesPerMeasurement;
+
+        init(dataRate, range, CommunicationInterface.SPI);
+    }
+
+    private int read(int register) throws Exception
+    {
+        int retVal = 0;
+
+        switch (mCommunicationInterface)
+        {
+            case I2C:
+                retVal = mI2cAdxl345.read(register);
+                break;
+            case SPI:
+                byte buffer[] = read(register, 1);
+                retVal = buffer[0];
+                break;
+            default:
+                break;
+        }
+
+        return retVal;
+    }
+
+    private byte[] read(int register, int length) throws Exception
+    {
+        byte[] retVal = new byte[length];
+
+        switch (mCommunicationInterface)
+        {
+            case I2C:
+                mI2cAdxl345.read(register, retVal, 0, retVal.length);
+                break;
+            case SPI:
+                byte buffer[] = new byte[1 + length];
+                buffer[0] = (byte) 0b10000000;
+                buffer[0] |= ((buffer.length > 1) ? (1 << 6) : 0);
+                buffer[0] |= (register & 0b00111111); // /w, MB, Address
+                byte[] result = mSpiAdxl345.write(buffer, 0, buffer.length);
+                System.arraycopy(result, 1, retVal, 0, retVal.length);
+                break;
+            default:
+                break;
+        }
+
+        return retVal;
+    }
+
+    private void write(int register, int mask, int value) throws Exception
+    {
+        int current = read(register);
+        int newValue = BitUtils.setValue(value, current, mask);
+
+        switch (mCommunicationInterface)
+        {
+            case I2C:
+                mI2cAdxl345.write(register, (byte) newValue);
+                break;
+            case SPI:
+                byte data[] = new byte[1 + 1];
+                data[0] = (byte) (0b00000000 | 0 | (register & 0b00111111)); // /w, MB, Address
+                data[1] = (byte) (newValue & 0xFF);
+                mSpiAdxl345.write(data, 0, data.length);
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    private void write(int regiter, int value) throws Exception
+    {
+        write(regiter, 0xFF, value);
     }
 
     public Calibration calibrate(Axis axis) throws Exception
@@ -386,13 +451,17 @@ public class ADXL345 implements Runnable
         try
         {
             int entries = 0;
-            entries = i2cRead(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
+            entries = read(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
 
-            if ((SAMPLECOUNT <= entries) && (1 > mSamples.size()))
+            if ((WATERMARK <= entries) && (1 > mSamples.size()))
             {
+                System.out.println("");
+                System.out.println("");
+
                 bufferSamples(entries);
-                entries = i2cRead(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
+                entries = read(ADXL345_REG_R_FIFO_STATUS) & ADXL345_MSK_FIFO_STATUS_ENTRIES;
             }
+            else System.out.print(".");
         }
         catch (Exception e1)
         {
@@ -411,32 +480,34 @@ public class ADXL345 implements Runnable
 
     private void bufferSamples(int entries) throws Exception
     {
-        AccellerometerMesurement measurement = new AccellerometerMesurement();
-
-        long timeStamp = System.currentTimeMillis();
-        long ms = mBaudRate.getMs();
+        long ms = System.currentTimeMillis();
+        long ns = mBaudRate.getUs() * 1000;
 
         for (int i = entries - 1; i >= 0; i--)
         {
-            byte[] buffer = new byte[6];
-
-            int count = i2cRead(ADXL345_REG_R_DATAX0, buffer);
-            if (buffer.length != count)
+            byte[] buffer = read(ADXL345_REG_R_DATAX0, 6);
+            if (buffer.length != 6)
             {
                 throw new Exception("Read failed");
             }
 
             double values = 0;
 
-            long sampleTimeStamp = timeStamp - (long) (i * ms);
+            NanoTime timeStamp = new NanoTime(ms, 0);
+            timeStamp.subtractNanos((long) (i * ns));
+
             for (int j = 0; j < 3; j++)
             {
                 values = toDouble(buffer[j * 2 + 1], buffer[j * 2]) * mGain;
-                measurement.add(Axis.values()[j], sampleTimeStamp, values, Quality.GOOD);
+                mCurrentMeasurement.add(Axis.values()[j], timeStamp, values, Quality.GOOD);
             }
         }
-
-        mSamples.add(measurement);
+        
+        if (mCurrentMeasurement.size(Axis.X) >= mSamplesPerMeasurement)
+        {
+            mSamples.add(mCurrentMeasurement);
+            mCurrentMeasurement = new AccellerometerMesurement();
+        }
     }
 
     public AccellerometerMesurement getMeasurement()

@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 
 import de.sonsts.rpi.iot.communication.common.ComplexValue;
 import de.sonsts.rpi.iot.communication.common.DoubleSampleValue;
+import de.sonsts.rpi.iot.communication.common.NanoTime;
 import de.sonsts.rpi.iot.communication.common.Quality;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.CrudCommandPayload;
 import de.sonsts.rpi.iot.communication.common.messaage.payload.MappingPayloadDescriptor;
@@ -51,15 +52,16 @@ public class MessageTest
         HashMap<Integer, String> mapping = new HashMap<Integer, String>();
         for (int i = 0; i < 10000; i++)
         {
-            mapping.put(i, "Signal" + i);
-            values.add(new DoubleSampleValue(1, 2, 3, Quality.GOOD));
+            // mapping.put(i, "Signal" + i);
+            NanoTime timeStamp = new NanoTime(1, 1000000);
+            values.add(new DoubleSampleValue(1, timeStamp, 3, Quality.GOOD));
             cValues.add(new ComplexValue(i, 0));
         }
 
         DocumentMessage<SampleValuePayload<DoubleSampleValue>> documentDSValueMessage = DocumentMessageFactory
                 .createDoubleSampleValueMessage(new MappingPayloadDescriptor<Integer, String>(mapping), values);
         objectMapper.writeValue(jsonData, documentDSValueMessage);
-        // System.out.println(jsonData);
+        System.out.println(jsonData);
 
         documentDSValueMessage = objectMapper.readValue(jsonData.toString().getBytes(), DocumentMessage.class);
         SampleValuePayload<DoubleSampleValue> payload = documentDSValueMessage.getPayload();
